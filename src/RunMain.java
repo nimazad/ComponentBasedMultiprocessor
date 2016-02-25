@@ -6,15 +6,30 @@ public class RunMain {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		double totalUtil = 1.1;
+		TaskSet myTasks = new TaskSet();
+		myTasks.setPeriodRange(10000, 10000);
+		double[] ratio = {0.01, 0.02, 0.03};
+		myTasks.setResourceSharingParameters(ratio, 3, 3);
+		myTasks.CreateRandomTaskSet(totalUtil, .9, true);
+		myTasks.PrintTaskSet();
 		
-		Experiment ex = new Experiment();
+		Component comp = new Component(myTasks, 4);
+		//System.out.printf("utilization %f \n", comp.getTaskSet().getUtilization());
+		comp.setPi(5000);
+		comp.getMPR().PrintMPR();
+		comp.getMPRWithResource().PrintMPR();
+		return;
+		
+		
+		//Experiment ex = new Experiment();
 		//ex.OverheadUtilExperiment(false, 4.1);
 		//ex.AllRandomExperiment(true, 0);
 		//Log log = new Log("Integration");
 		//RTSystem mysys =  log.ReadSystem(6);
 		
 		//ex.PiExperiment(true, 1.2);
-		ex.MaxTaskUtilExperiment(true, 0.3);
+		//ex.MaxTaskUtilExperiment(true, 0.3);
 		//ex.Integration(true, 0);
 		
 		//sys.IntegrateMPROnMinProcessors("CP");

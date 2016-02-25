@@ -52,6 +52,18 @@ public class MPR {
 		this.Theta -= amount;
 	}
 	/**
+	 * This function calculates budget assuming shared resources in component gEDF task-scheduler.
+	 * It assumes that the period Pi is already set.
+	 * @param taskSet
+	 */
+	public void calcMinimalInterfaceWithResources(TaskSet taskSet)
+	{
+		taskSet.Inflation(this.mPrime);
+		calcMinimalInterface(taskSet);
+		this.PrintMPR();
+		this.Theta += this.mPrime * taskSet.Overrun(this.mPrime); 
+	}
+	/**
 	 * This function calculates budget assuming gEDF task-scheduler.
 	 * It assumes that the period Pi is already set.
 	 * @param taskSet
@@ -203,6 +215,8 @@ public class MPR {
 	    demand +=  getSumOfnLargest(diff, diff_end);
 		return demand;
 	}
+	
+
 	private double carryIn(Task task, int t)
 	{
 		double result = 0;

@@ -77,6 +77,14 @@ public class Component {
 		this.MPRTime = System.nanoTime() - sTime;
 		return mpr;
 	}
+	public MPR getMPRWithResource()
+	{
+		//mpr.setM(M);
+		long sTime = System.nanoTime();
+		mpr.calcMinimalInterfaceWithResources(taskSet);
+		this.MPRTime = System.nanoTime() - sTime;
+		return mpr;
+	}
 	public PR getPR()
 	{
 		pr.calcInterface(taskSet);

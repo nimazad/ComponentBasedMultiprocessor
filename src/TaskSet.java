@@ -14,7 +14,16 @@ public class TaskSet {
 	private long index;
 	private double utilization;
 	private List<Task> taskList;
+	private double[] criticalSectionRatio;
+	private int numberOfResources;
+	private int maxNumberOfCriticalSections;
 	
+	public void setResourceSharingParameters(double[] ratio, int numberOfResources, int maxNumberOfCriticalSections)
+	{
+		this.criticalSectionRatio = ratio;
+		this.numberOfResources = numberOfResources;
+		this.maxNumberOfCriticalSections = maxNumberOfCriticalSections;
+	}
 	public TaskSet()
 	{
 		taskList = new ArrayList<Task>();
@@ -55,7 +64,7 @@ public class TaskSet {
 			this.AddTask(task);
 		}
 	}
-	public void CreateRandomTaskSet(double setUtil, double maxTaskUtil)
+	public void CreateRandomTaskSet(double setUtil, double maxTaskUtil, boolean resource)
 	{
 		if(minPeriod<=0 || deltaPeriod <= 0)
 		{
@@ -74,6 +83,11 @@ public class TaskSet {
 			task.period = task.period - task.period % 10; // resolution of timer is set to 10
 			task.deadline = task.period;
 			task.executionTime = (int) (util*task.period);
+			// For resource sharing
+			if(resource)
+			{
+				task.CreateCriticalSectionSet(criticalSectionRatio, numberOfResources, maxNumberOfCriticalSections);
+			}
 			task.index = i; i++;
 			this.AddTask(task);
 		}
@@ -84,6 +98,10 @@ public class TaskSet {
 		task.period = task.period - task.period % 10; // resolution of timer is set to 10
 		task.deadline = task.period;
 		task.executionTime = (int) (util*task.period);
+		if(resource)
+		{
+			task.CreateCriticalSectionSet(criticalSectionRatio, numberOfResources, maxNumberOfCriticalSections);
+		}
 		task.index = i; i++;
 		this.AddTask(task);
 	}
@@ -138,6 +156,7 @@ public class TaskSet {
 		{
 			Task task = taskList.get(i);
 			System.out.printf("-- task[%d]: period %d executionTime %d U:%.2f \n", task.index, task.period, task.executionTime, task.getUtilization());
+			task.PrintCriticalSections();
 		}
 		System.out.printf("------------------------------------------------------------ \n");
 	}
@@ -252,5 +271,106 @@ public class TaskSet {
 	public long getIndex()
 	{
 		return this.index;
+	}
+	public int getMyMaxCriticalSection(int myId)
+	{
+		int maxLength = 0;
+		Task myTask = taskList.get(myId);
+		for(int i=0;i<this.getSize();i++)
+		{
+			if(i != myId)
+			{
+				Task task = taskList.get(i);
+				CriticalSectionSet csSet = task.getCriticalSections();
+				for (CriticalSection cs : csSet.getCriticalSectionSet()) 
+				{
+					if(myTask.getCriticalSections().IfResourceExists(cs.getResourceNumber()))
+					{
+						if(cs.getLength() > maxLength)
+							maxLength = cs.getLength();
+					}
+				}
+			}
+		}
+		return maxLength;
+	}
+	public int getMaxCriticalSectionExceptMe(int myId)
+	{
+		int maxLength = 0;
+		Task myTask = taskList.get(myId);
+		for(int i=0;i<this.getSize();i++)
+		{
+			if(i != myId)
+			{
+				Task task = taskList.get(i);
+				CriticalSectionSet csSet = task.getCriticalSections();
+				for (CriticalSection cs : csSet.getCriticalSectionSet()) 
+				{
+					if(!myTask.getCriticalSections().IfResourceExists(cs.getResourceNumber()))
+					{
+						if(cs.getLength() > maxLength)
+							maxLength = cs.getLength(); // + spin i,q
+					}
+				}
+			}
+		}
+		return maxLength;
+	}
+	
+	public int getMaxmPrimeCriticalSectionExceptMeOfResource(int myTaskId, int myResourceID, int mPrime)
+	{
+		int sumMaxmPrimeLength = 0;
+		Task myTask = taskList.get(myTaskId);
+		List<Integer> allMaxCs =  new ArrayList<Integer>();
+		
+		for(int i=0;i<this.getSize();i++)
+		{
+			if(i != myTaskId)
+			{
+				Task task = taskList.get(i);				
+				allMaxCs.add(task.getCriticalSections().getMaxLength(myResourceID));
+			}
+		}
+		//Sum of m' max
+		Collections.sort(allMaxCs);
+		int startIndex = allMaxCs.size()-mPrime -1;
+		if (startIndex < 0 )
+			startIndex = 0;
+		for(int i=startIndex; i<allMaxCs.size();i++)
+			sumMaxmPrimeLength += allMaxCs.get(i);
+			
+		return sumMaxmPrimeLength ;
+	}
+	public void Inflation(int mPrime)
+	{
+		for(int i=0;i<this.getSize();i++)
+		{
+			int spini = 0;
+			Task task = taskList.get(i);
+			CriticalSectionSet csSet = task.getCriticalSections();
+			for (CriticalSection cs : csSet.getCriticalSectionSet()) 
+			{
+				spini += getMaxmPrimeCriticalSectionExceptMeOfResource(i, cs.getResourceNumber(), mPrime);
+			}
+			task.executionTime += spini;
+		}
+	}
+	public int Overrun(int mPrime)
+	{
+		int BudgetInflation = 0;
+		for(int i=0;i<this.getSize();i++)
+		{
+			Task task = taskList.get(i);
+			CriticalSectionSet csSet = task.getCriticalSections();
+			for (CriticalSection cs : csSet.getCriticalSectionSet()) 
+			{
+				int spiniq = getMaxmPrimeCriticalSectionExceptMeOfResource(i, cs.getResourceNumber(), mPrime);
+				if(spiniq + cs.getLength() > BudgetInflation)
+				{
+					BudgetInflation = spiniq + cs.getLength();
+				}
+			}
+		}
+		return BudgetInflation;
 	}
 }
