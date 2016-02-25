@@ -1,2 +1,4 @@
 # ComponentBasedMultiprocessor
-Analysis Model for Component-Based Software Development for Multiprocessor Real-Time Systems using the Periodic Resource Model Abstraction
+This repository contains an analysis framework for component-cased software development for multiprocessor real-time systems using the periodic resource model abstraction.
+The results are published at http://dx.doi.org/10.1109/RTCSA.2015.27
+
